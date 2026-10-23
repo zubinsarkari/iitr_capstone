@@ -10,6 +10,7 @@ FEATURES = [
     "hub_tier", "hub_daily_capacity",
     "label_print_batch", "scanner_build_no", "tape_roll_no", "sticker_serial_mod", "shelf_slot_no",
 ]
+
 NOISE_COLUMNS = ["label_print_batch", "scanner_build_no", "tape_roll_no", "sticker_serial_mod", "shelf_slot_no"]
 
 
@@ -19,9 +20,6 @@ def clean_shipments(raw, medians=None):
     deduplicated_df["service_type"] = deduplicated_df["service_type"].str.strip().str.title()
     deduplicated_df["payment_mode"] = deduplicated_df["payment_mode"].fillna("Unknown")
     deduplicated_df["declared_value"] = deduplicated_df["declared_value"].str.replace('₹','').str.replace(",","")
-    # ids with missing declared_value in raw data
-    #SHP10029
-    #SHP10389
     deduplicated_df["declared_value_inr"] = pd.to_numeric(deduplicated_df["declared_value"], errors='coerce')
     deduplicated_df["dispatch_time"] = pd.to_datetime(deduplicated_df["dispatch_time"])
     median_distance = round(deduplicated_df["distance_km"].median(),4)

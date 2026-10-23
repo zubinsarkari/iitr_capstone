@@ -32,10 +32,12 @@ def checks(raw_data,modeling_data):
     iqr = hours_q3 - hours_q1
     hours_lower_bound = hours_q1 - (1.5 * iqr)
     hours_upper_bound = hours_q3 + (1.5 * iqr)
-    median_parcel_weight_kg = modeling_data["parcel_weight_kg"].median()
+    median_parcel_weight_kg = raw_rows["parcel_weight_kg"].median()
     median_declared_value_inr = modeling_data["declared_value_inr"].median()
     rows_after_hub_merge = len(modeling_data)
     delayed_count = (modeling_data["is_delayed"] == 1).sum()
+    hours_outlier_count = np.sum(modeling_data["delivery_hours"] > hours_upper_bound)
+    delay_rate = np.round(delayed_count / rows_after_hub_merge, 4)
 
     
     return pd.DataFrame([{
@@ -49,20 +51,20 @@ def checks(raw_data,modeling_data):
         'missing_payment_mode_before' : missing_payment_mode_before,
         'service_type_spellings_before' : service_type_spellings_before,
         'service_type_spellings_after' : service_type_spellings_after,
-        'nulls_in_features_and_target' : nulls_in_features_and_target,
         'declared_value_mean_inr' : declared_value_mean_inr,
-        'declared_value_median_inr' : declared_value_median_inr,
         'log_declared_value_mean' : log_declared_value_mean,
-        'log_declared_value_median' : log_declared_value_median,
-        'hours_q1' : round(hours_q1,2),
-        'hours_q3' : round(hours_q3,2),
-        'hours_lower_bound' : round(hours_lower_bound,2),
-        'hours_upper_bound' : round(hours_upper_bound,2),
         'median_distance_km' : median_distance_km,
         'median_parcel_weight_kg' : median_parcel_weight_kg,
         'median_declared_value_inr' : median_declared_value_inr,
         'rows_after_hub_merge' : rows_after_hub_merge,
-        'delayed_count' : delayed_count 
+        'nulls_in_features_and_target' : nulls_in_features_and_target,
+        'delayed_count' : delayed_count,
+        'delay_rate' : delay_rate,
+        'hours_q1 / hours_q3' : f'{round(hours_q1,2)} / {round(hours_q3,2)}',
+        'hours_lower_bound / hours_upper_bound' : f'{round(hours_lower_bound,2)} / {round(hours_upper_bound,2)}',
+        'hours_outlier_count' : hours_outlier_count,
+        'declared_value_median_inr' : declared_value_median_inr,
+        'log_declared_value_median' : log_declared_value_median
     }])
 
 def evidence(modeling_table):
@@ -85,7 +87,6 @@ def evidence(modeling_table):
         parts.append(t)
     final_df = pd.concat(parts, ignore_index=True)
     final_df["delay_rate"] = np.round(final_df["delayed"] / final_df["shipments"], 4)
-    #final_df["mean_hours"] = np.round(df["delivery_hours"].mean(), 4)
     return final_df
 
 def correlations(modeling_table):
@@ -95,13 +96,32 @@ def correlations(modeling_table):
 if __name__ == "__main__":
     raw_shipments = Path(__file__).resolve().parent.parent / "data" / "raw_shipments.csv"
     hubs = Path(__file__).resolve().parent.parent / "data" / "hubs.csv"
+    new_shipments = Path(__file__).resolve().parent.parent / "data" / "new_shipments.csv"
     modeling_df = modelling_table(raw_shipments,hubs)
     checks_df = checks(raw_shipments,modeling_df)
     evidence_df = evidence(modeling_df)
     correlation_df = correlations(modeling_df)
-
+    top3_df = correlation_df.copy()
+    top3_df["abs"] = top3_df[["delivery_hours"]].drop("delivery_hours").abs()
+    top3 = np.round(top3_df.sort_values("abs",ascending=False).head(3),4)
     modeling_df.to_csv("data/modelling_table.csv", index=False)
     checks_df.to_csv("data/part_a_checks.csv", index=False)
     evidence_df.to_csv("data/part_a_delay_by_group.csv", index=False)
     correlation_df.to_csv("data/part_a_correlations.csv", index=False)
+
+    mean_before_transform = np.round(modeling_df["declared_value_inr"].mean(),4)
+    mean_after_transform = np.round(modeling_df["log_declared_value"].mean(),4)
+    median_before_transform = np.round(modeling_df["declared_value_inr"].median(),4)
+    median_after_transform = np.round(modeling_df["log_declared_value"].median(),4)
+
+
+    new_shipments_df = clean_shipments(new_shipments,{'distance_km': 32, 'parcel_weight_kg' : 22,'declared_value_inr' : 330})
+    new_build_features = build_features(new_shipments_df,hubs)
+    na = new_build_features.isna().sum()
+    print(f'null values in new shipment features : {na[na > 0].sum()}') 
+    print(f'mean_before_transform : {mean_before_transform}')
+    print(f'mean_after_transform : {mean_after_transform}')
+    print(f'median_before_transform : {median_before_transform}')
+    print(f'median_after_transform : {median_after_transform}')
+    
     
