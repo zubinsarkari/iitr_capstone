@@ -35,3 +35,26 @@ Ranked by absolute correlation in `outputs/part_a_correlations.csv`
 Before the transform the mean was **1533.0542** and the median **1121.5**;
 after it, the mean is **7.0277** and the median **7.0224** (filled column).
 <Since np.log shrinks the larger value more than the smaller values, the numbers are replaced by their log values. Hence we see. such a difference between mean and median before and after log-transformed>
+
+
+## Model results (regression)
+
+**Baseline.**
+R² = -0.0212. Since the value of r2 is low, it means that the model does not explain any variability in the dependent variable
+
+**Validation winner.**
+LinearRegression won with RMSE = 4.8912 hours (R² 0.9313).
+
+**Bias vs variance by depth** (from `part_b_tree_depth.csv`):
+- High bias: depths <(1 to 4)>. Evidence: <11.6334 to 6.0999, 0.5 to 1.29>.
+- High variance: depths <8,12, unlimited>. Evidence: <(3.336,1.36,0), (6.83,7.41,7.77), gap>.
+
+**Learning rate** (from `part_b_gb_learning_rate.csv`):
+- Best: 0.1 (4.91 , 0.93 ).
+- 0.01: 10.0018,0.7127. Why it fails: After training 100 trees, since it only corrects 1% of the data. The model is able to explain about 72% of the variation rest everything is unexplained.
+- 1.0: 7.3946,0.8429. Why it fails: <overshooting>.
+
+**Cross-validation vs validation** (from `part_b_cv.csv`):
+- CV: gradient_boosting 0.9352 ± 0.0044; linear_regression 0.9261 ± 0.0048.
+- Do the rankings agree? No.
+- Model I would ship and why: I would ship the gradient boosting model, cross validation r2 score is higher than the linear regression measured over 5 folds on 1020 rows.
