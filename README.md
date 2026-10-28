@@ -1,5 +1,8 @@
 # iitr_capstone
 Repository for AI/ML course from IIT Roorkee
+
+## PART A
+
 # Data findings
 
 All numbers below are copied from the output files in `outputs/`.
@@ -36,6 +39,7 @@ Before the transform the mean was **1533.0542** and the median **1121.5**;
 after it, the mean is **7.0277** and the median **7.0224** (filled column).
 <Since np.log shrinks the larger value more than the smaller values, the numbers are replaced by their log values. Hence we see. such a difference between mean and median before and after log-transformed>
 
+## PART B
 
 ## Model results (regression)
 
