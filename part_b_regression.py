@@ -1,5 +1,5 @@
 
-from shipment_prep import FEATURES
+from src.shipment_prep import FEATURES
 from pathlib import Path
 import pandas as pd
 from sklearn.model_selection import train_test_split, KFold, cross_val_score
@@ -15,7 +15,7 @@ from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 
 def preprocess(input):
     x = input[FEATURES]
-    y = input[["delivery_hours"]]
+    y = input["delivery_hours"]
 
     x_train, x_temp, y_train, y_temp = train_test_split(x, y, test_size = 0.3, random_state = 42)
     x_val, x_test, y_val, y_test = train_test_split(x_temp, y_temp, test_size=0.5,random_state=42)
@@ -161,6 +161,6 @@ def preprocess(input):
        
 
 if __name__ == "__main__":
-    modelling = pd.read_csv(Path(__file__).resolve().parent.parent / "data" / "modelling_table.csv")
+    modelling = pd.read_csv(Path(__file__).resolve().parent / "data" / "modelling_table.csv")
     preprocess(modelling)
     

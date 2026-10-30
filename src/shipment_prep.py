@@ -13,6 +13,12 @@ FEATURES = [
 
 NOISE_COLUMNS = ["label_print_batch", "scanner_build_no", "tape_roll_no", "sticker_serial_mod", "shelf_slot_no"]
 
+def compute_medians(input):
+   return {
+        "distance_km": round(input["distance_km"].median(), 4),
+        "parcel_weight_kg": round(input["parcel_weight_kg"].median(), 4),
+        "declared_value_inr": round(input["declared_value_inr"].median(), 4),
+    }
 
 def clean_shipments(raw, medians=None):
     raw_df = pd.read_csv(raw)
@@ -21,10 +27,7 @@ def clean_shipments(raw, medians=None):
     deduplicated_df["payment_mode"] = deduplicated_df["payment_mode"].fillna("Unknown")
     deduplicated_df["declared_value"] = deduplicated_df["declared_value"].str.replace('₹','').str.replace(",","")
     deduplicated_df["declared_value_inr"] = pd.to_numeric(deduplicated_df["declared_value"], errors='coerce')
-    deduplicated_df["dispatch_time"] = pd.to_datetime(deduplicated_df["dispatch_time"])
-    median_distance = round(deduplicated_df["distance_km"].median(),4)
-    median_weight = round(deduplicated_df["parcel_weight_kg"].median(),4)
-    median_value_inr= round(deduplicated_df["declared_value_inr"].median(),4)
+    deduplicated_df["dispatch_time"] = pd.to_datetime(deduplicated_df["dispatch_time"])   
     deduplicated_df["parcel_weight_kg"] = deduplicated_df["parcel_weight_kg"].where(deduplicated_df["parcel_weight_kg"] <= 100)
 
     if medians is not None:
@@ -32,9 +35,10 @@ def clean_shipments(raw, medians=None):
         deduplicated_df["parcel_weight_kg"] = deduplicated_df["parcel_weight_kg"].fillna(medians.get('parcel_weight_kg',0))
         deduplicated_df["declared_value_inr"] = deduplicated_df["declared_value_inr"].fillna(medians.get('declared_value_inr',0))
     else:    
-        deduplicated_df["distance_km"] = deduplicated_df["distance_km"].fillna(median_distance)
-        deduplicated_df["parcel_weight_kg"] = deduplicated_df["parcel_weight_kg"].fillna(median_weight)
-        deduplicated_df["declared_value_inr"] = deduplicated_df["declared_value_inr"].fillna(median_value_inr)
+        medians = compute_medians(deduplicated_df)
+        deduplicated_df["distance_km"] = deduplicated_df["distance_km"].fillna(medians["distance_km"])
+        deduplicated_df["parcel_weight_kg"] = deduplicated_df["parcel_weight_kg"].fillna(medians["parcel_weight_kg"])
+        deduplicated_df["declared_value_inr"] = deduplicated_df["declared_value_inr"].fillna(medians["declared_value_inr"])
     
     cleaned_df = deduplicated_df.drop(columns='declared_value')
     return cleaned_df

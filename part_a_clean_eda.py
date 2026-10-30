@@ -1,5 +1,5 @@
 from pathlib import Path
-from shipment_prep import build_features , clean_shipments, FEATURES
+from src.shipment_prep import build_features , clean_shipments, FEATURES
 import numpy as np
 import pandas as pd
 
@@ -94,9 +94,9 @@ def correlations(modeling_table):
     return df
 
 if __name__ == "__main__":
-    raw_shipments = Path(__file__).resolve().parent.parent / "data" / "raw_shipments.csv"
-    hubs = Path(__file__).resolve().parent.parent / "data" / "hubs.csv"
-    new_shipments = Path(__file__).resolve().parent.parent / "data" / "new_shipments.csv"
+    raw_shipments = Path(__file__).resolve().parent / "data" / "raw_shipments.csv"
+    hubs = Path(__file__).resolve().parent / "data" / "hubs.csv"
+    new_shipments = Path(__file__).resolve().parent / "data" / "new_shipments.csv"
     modeling_df = modelling_table(raw_shipments,hubs)
     checks_df = checks(raw_shipments,modeling_df)
     evidence_df = evidence(modeling_df)

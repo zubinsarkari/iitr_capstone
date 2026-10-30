@@ -1,4 +1,4 @@
-from shipment_prep import FEATURES, NOISE_COLUMNS
+from src.shipment_prep import FEATURES, NOISE_COLUMNS
 from pathlib import Path
 import pandas as pd
 from sklearn.model_selection import train_test_split, GridSearchCV, RandomizedSearchCV
@@ -47,7 +47,6 @@ def build_classification_model(input):
         preds_2 = dt.predict(x_val)
         score.append(f1_score(y_val,preds_2))
     depth_with_max_r1 = depths[np.argmax(score)]
-    print(f'decision_tree_depth_{depth_with_max_r1}')
 
     dt2 = DecisionTreeClassifier(criterion='gini', max_depth=depth_with_max_r1, random_state=42)
     dt2.fit(x_train, y_train)
@@ -109,7 +108,7 @@ def build_classification_model(input):
     rf_df = pd.DataFrame({
         'feature' : x_train.columns,
         'f_score' : np.round(kbest.scores_,4),
-        'f_rank' : pd.Series(np.round(kbest.scores_,4)).rank(ascending=False, method='first').astype(int),
+        'f_rank' : pd.Series(kbest.scores_).rank(ascending=False, method='first').astype(int),
         'rf_importance' : np.round(default_rf.feature_importances_,4),
         'is_noise' : x_train.columns.isin(NOISE_COLUMNS)
     })
@@ -125,7 +124,7 @@ def build_classification_model(input):
         ])
         pip.fit(x_train, y_train)
         pred = pip.predict(x_val)
-        res.append({'k': k , 'val_f1' : np.round(f1_score(y_val, pred))})
+        res.append({'k': k , 'val_f1' : np.round(f1_score(y_val, pred),4)})
 
     pd.DataFrame(res).to_csv("outputs/part_c_selectk.csv", index=False)
 
@@ -217,14 +216,45 @@ def build_classification_model(input):
             'TN': new_cm[0], 'FP': new_cm[1], 'FN': new_cm[2], 'TP': new_cm[3],
             'accuracy' : np.round(acc,4), 'precision' : np.round(pre,4), 'recall' : np.round(rec,4), 'f1' : np.round(f1,4)
         })
-
-    pd.DataFrame(r).to_csv("outputs/part_c_thresholds.csv", index=False)
+    threshold_values = pd.DataFrame(r)
+    threshold_values.to_csv("outputs/part_c_thresholds.csv", index=False)
     
-     
-     
-     
+    # TASK 7
+    alert_threshold = threshold_values[threshold_values["recall"] >= 0.8]
+    if len(alert_threshold) > 0:
+        alert_threshold = alert_threshold["threshold"].max()
+    else:
+        alert_threshold = 0.1
+
+    print(f'alert_threshold : {alert_threshold}')        
+    test_probs = new_pipeline.predict_proba(x_test)[:,1]
+    test_pred = (test_probs >= alert_threshold).astype(int)
+    final_cm = confusion_matrix(y_test, test_pred, labels=[0,1]).ravel()
+    final_acc = accuracy_score(y_test, test_pred)
+    final_pre = precision_score(y_test, test_pred, zero_division=0)
+    final_rec = recall_score(y_test, test_pred, zero_division=0)
+    final_f1 = f1_score(y_test, test_pred, zero_division=0)
+
+    rows_to_write = []
+    rows_to_write.append({
+        'threshold' : alert_threshold,
+        'TN': final_cm[0], 'FP': final_cm[1], 'FN': final_cm[2], 'TP': final_cm[3],
+        'accuracy' : np.round(final_acc,4), 'precision' : np.round(final_pre,4), 'recall' : np.round(final_rec,4), 'f1' : np.round(final_f1,4)
+    }) 
+
+    pd.DataFrame(rows_to_write).to_csv("outputs/part_c_final_test.csv", index=False)
+
+    # hard coded values here since we already know that which setting has won.
+    pd.DataFrame([{
+        'selector_k' : 7,
+        'n_estimators' : 100,
+        'max_depth' : 'unlimited',
+        'min_samples_leaf' : 1,
+        'threshold' : alert_threshold,
+        'chosen_from' : 'default_forest_same_7_features'
+    }]).to_csv("outputs/part_c_final_config.csv", index=False)
 
 
 if __name__ == "__main__":
-    modelling = pd.read_csv(Path(__file__).resolve().parent.parent / "data" / "modelling_table.csv")
+    modelling = pd.read_csv(Path(__file__).resolve().parent / "data" / "modelling_table.csv")
     build_classification_model(modelling)
