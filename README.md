@@ -125,45 +125,43 @@ Notes:
 - The other 20 hubs match their tier. So the tier label is a useful rough guide but not a reliable one. Decisions about attention and escalation should follow the observed segment, and the tier should be treated as context only. I recommend reviewing the tier labels of these four hubs.
 
 **Alert threshold** (`part_c_final_test.csv`)
-- Threshold: `<value>`.
-- Precision: `<value>`, so about `<n>` of every 10 flagged parcels are really delayed.
-- Recall: `<value>`, so about `<n>` of every 10 delayed parcels are caught.
+- Threshold: 0.5.
+- Precision: 0.6889, so about 7 of every 10 flagged parcels are really delayed.
+- Recall: 0.7561, so about 8 of every 10 delayed parcels are caught.
 
 **New parcels** (`new_shipment_actions.csv`)
-- Flagged: `<n>` of the 48 new parcels.
-- Needing hub-manager escalation: `<n>` of those flagged.
+- Flagged: 8 of the 48 new parcels.
+- Needing hub-manager escalation: 6 of those flagged.
 
-**Why K = 3** (`part_d_separation.csv`)
-- `<one or two sentences: cite the ratios for K = 3, 4 and 5, and the cluster sizes of the K = 4 and K = 5 solutions (a cluster of fewer than 6 hubs)>`
+
+- **Why K = 3** (`part_d_separation.csv`)
+- The biggest gain in the across-to-within ratio comes from K = 2 to K = 3 (2.8940 to 5.3928); after that the gains shrink (6.3047 at K = 4 and 6.8866 at K = 5). The higher ratios at K = 4 and K = 5 come from splitting off clusters of fewer than 6 hubs (sizes 8-7-5-4 and 8-7-4-3-2), which are too small to carry their own playbook. K = 3 gives 9-8-7 and matches the three playbooks operations runs, so I kept it.
 
 ## Production plan
 
 **(a) Production-readiness characteristics** (at least five, each tied to a repo item)
 
-| Characteristic | Item in this repository |
-|---|---|
-| `<e.g. reproducibility>` | `<file, setting or script>` |
-| `<characteristic>` | `<item>` |
-| `<characteristic>` | `<item>` |
-| `<characteristic>` | `<item>` |
-| `<characteristic>` | `<item>` |
+reproducibility : random_state=42 at all places and byte identical output of predict_delay.py
+accuracy : part_c_final_test.csv (precision 0.6889, recall 0.7561, F1 0.7209) and the validation results in part_c_models.csv
+reliability : The reload check in part_d_reload_check.csv and pinned versions in requirements.txt
+monitorability : The saved results can be used as a baseline to compare against. 
+maintainability : shared functions in src/shipment_prep.py used by training and scoring 
 
-**(b) Quantities to monitor** (at least three, each with a numeric trigger)
+**(b) Quantities to monitor** 
 
-| Quantity | How it is measured | Trigger |
-|---|---|---|
-| `<quantity>` | `<frequency and definition>` | `<numeric threshold>` |
-| `<quantity>` | `<frequency and definition>` | `<numeric threshold>` |
-| `<quantity>` | `<frequency and definition>` | `<numeric threshold>` |
+- **Weekly delayed share of delivered parcels:** the baseline is 278 of 1,200 parcels, about 23% (`modelling_table.csv`). Trigger: above 28% for two consecutive weeks. Action: check the incoming data for drift and compare recall on the newly known outcomes with the 0.7561 from `part_c_final_test.csv`.
 
-**(c) Retraining and drift**
-- Retraining schedule: `<how often, and what triggers an early retrain>`.
-- 15 to 28 September sale window (`sale_event_flag`): `<how to handle it; compare against the same kind of event, not ordinary weeks>`.
-- What data drift would look like here: `<one or two concrete examples, such as a shift in a feature's distribution or in the delayed share>`.
+- **Weekly share of parcels flagged:** the model flagged 44 of 180 validation parcels (about 24%) at threshold 0.5. Trigger: below 15% or above 35% for two consecutive weeks. Action: check the input data for drift, then compare recall on parcels with known outcomes with the 0.7561 from `part_c_final_test.csv`.
+
+- **Recall on parcels whose outcome is now known:** the baseline is 0.7561 on the test rows (31 of 41 delayed parcels caught, `part_c_final_test.csv`); validation recall was 0.8333. Trigger: recall below 0.65 over a rolling four-week window of delivered parcels. Action: review the flagged-share and delayed-share signals for drift, and retrain on recent data if the drop holds.
+
+- **Sale window (15 to 28 September, `sale_event_flag = 1`):** in `modelling_table.csv`, 81 of 175 sale-window parcels were delayed (46%), against 19% on ordinary days, so a sale week must not be judged against ordinary weeks. Baseline: 46%. Trigger: a delayed share above 55% or below 35% during the sale window. Action: check recall on parcels with known outcomes and retrain if it has dropped. Because 175 parcels is a small sample, the baseline is rough, and next year's sale window should be compared with this year's.
+
+
 
 ## Limitations
 
-1. `<limitation, for example synthetic data>`
-2. `<limitation, for example few delayed parcels in the test set>`
-3. `<limitation, for example threshold tuned on one validation split>`
-4. `<optional further limitation>`
+1. **Small dataset.** The model was built on 1,200 parcels, 278 of them delayed. With so few examples, differences between models were tiny (for example validation RMSE 4.8912 vs 4.9165 hours), so the model ranking is not reliable.
+2. **Synthetic data.** The data is synthetic, so real parcel data, with its noise, new hubs and new failure modes, could behave differently. These results are not evidence of performance in production.
+3. **Few delayed parcels in the test set.** The test set has only 41 delayed parcels, so one parcel changes recall by about 0.024. Test recall (0.7561) falling below validation recall (0.8333) is within that noise, and the 0.80 recall target was not confirmed.
+4. **Threshold tuned on one validation split.** The 0.5 threshold was chosen on a single 180-row split with 42 delayed parcels. A different split could pick a different threshold.
