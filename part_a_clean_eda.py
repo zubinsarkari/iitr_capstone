@@ -105,9 +105,9 @@ if __name__ == "__main__":
     top3_df["abs"] = top3_df[["delivery_hours"]].drop("delivery_hours").abs()
     top3 = np.round(top3_df.sort_values("abs",ascending=False).head(3),4)
     modeling_df.to_csv("data/modelling_table.csv", index=False)
-    checks_df.to_csv("data/part_a_checks.csv", index=False)
-    evidence_df.to_csv("data/part_a_delay_by_group.csv", index=False)
-    correlation_df.to_csv("data/part_a_correlations.csv", index=False)
+    checks_df.to_csv("outputs/part_a_checks.csv", index=False)
+    evidence_df.to_csv("outputs/part_a_delay_by_group.csv", index=False)
+    correlation_df.to_csv("outputs/part_a_correlations.csv", index=False)
 
     mean_before_transform = np.round(modeling_df["declared_value_inr"].mean(),4)
     mean_after_transform = np.round(modeling_df["log_declared_value"].mean(),4)

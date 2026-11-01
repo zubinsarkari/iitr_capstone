@@ -20,7 +20,7 @@ Delay rate moves from **2.2%** (0-200) to **13.6%** (201-400),
 Source: `part_a_delay_by_group.csv`, rows `distance_band / ...`.
 
 ## 4. Columns most correlated with `delivery_hours`
-Ranked by absolute correlation in `outputs/part_a_correlations.csv`
+Ranked by absolute correlation in `data/part_a_correlations.csv`
 (`delivery_hours` itself excluded):
 
 | Rank | Column | Correlation |
