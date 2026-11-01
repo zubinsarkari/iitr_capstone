@@ -17,7 +17,7 @@ def build_final_model(input):
             mean_n_stops = ("n_stops", 'mean')
         ).reset_index().sort_values("hub_id")
         )
-    df.to_csv("outputs/hub_profile.csv", index=False)
+    df.round(4).to_csv("outputs/hub_profile.csv", index=False)
         
     # TASK 2
     x = df[["mean_delivery_hours", "delay_rate", "mean_distance_km", "mean_n_stops"]]
@@ -48,7 +48,7 @@ def build_final_model(input):
 
 
         sizes = sorted(Counter(labels).values(), reverse=True)
-        across_over_within = np.mean(across) / np.mean(within)
+        across_over_within = np.round(np.mean(across) / np.mean(within),4)
         out.append({
             'K' : k,
             'across_over_within' : across_over_within,
@@ -78,7 +78,7 @@ def build_final_model(input):
         )
      ).reset_index()
 
-    df3.to_csv("outputs/segment_profile.csv", index=False)
+    df3.round(4).to_csv("outputs/segment_profile.csv", index=False)
 
     dict_map  = {1: "Standard", 2: "Watch", 3: "Escalate"}
     df2["temp_segment"] = df2["hub_tier"].map(dict_map)

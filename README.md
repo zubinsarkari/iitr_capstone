@@ -20,7 +20,7 @@ Delay rate moves from **2.2%** (0-200) to **13.6%** (201-400),
 Source: `part_a_delay_by_group.csv`, rows `distance_band / ...`.
 
 ## 4. Columns most correlated with `delivery_hours`
-Ranked by absolute correlation in `data/part_a_correlations.csv`
+Ranked by absolute correlation in `outputs/part_a_correlations.csv`
 (`delivery_hours` itself excluded):
 
 | Rank | Column | Correlation |
@@ -96,12 +96,14 @@ LinearRegression won with RMSE = 4.8912 hours (R² 0.9313).
 From a fresh clone, run these commands in order:
 1. Create venv : `python3 -m venv .venv`
 2. `pip install -r requirements.txt`
-3. `python ./part_a_clean_eda.py`
-4. `python ./part_b_regression.py`
-5. `python ./part_c_classfication.py`
-6. `python ./part_d_segments.py`
-7. `python ./package_model.py`
-8. `python ./predict_delay.py`
+3. `python ./generate_data.py`
+4. `python ./src/shipment_prep.py` 
+5. `python ./part_a_clean_eda.py`
+6. `python ./part_b_regression.py`
+7. `python ./part_c_classfication.py`
+8. `python ./part_d_segments.py`
+9. `python ./package_model.py`
+10. `python ./predict_delay.py`
 
 
 Notes:
